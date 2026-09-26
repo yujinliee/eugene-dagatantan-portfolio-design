@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import { ArrowDownRight, ChevronDown, Menu, X } from 'lucide-react'
 import { SiCanvas, SiCss, SiFigma, SiFlutter, SiHtml5, SiJavascript, SiPhotopea, SiReact, SiTailwindcss } from 'react-icons/si'
 
@@ -102,6 +102,32 @@ function ToolItem({ item, index, isOpen, onToggle }: { item: (typeof tools)[numb
   </button>
 }
 
+function RevealHeading({ lines, className = '' }: { lines: ReactNode[]; className?: string }) {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const heading = headingRef.current
+    if (!heading) return
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (mediaQuery.matches) {
+      setIsVisible(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting)
+    }, { threshold: 0.2, rootMargin: '-8% 0px -8% 0px' })
+
+    observer.observe(heading)
+    return () => observer.disconnect()
+  }, [])
+
+  return <h2 ref={headingRef} className={`reveal-heading${isVisible ? ' is-visible' : ''}${className ? ` ${className}` : ''}`}>
+    {lines.map((line, index) => <span className="reveal-heading-mask" key={index}><span className="reveal-heading-line">{line}</span></span>)}
+  </h2>
+}
+
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [introVisible, setIntroVisible] = useState(true)
@@ -111,6 +137,7 @@ export default function Page() {
   const [openTool, setOpenTool] = useState<number | null>(null)
   const [aboutProgress, setAboutProgress] = useState(0)
   const [reducedMotion, setReducedMotion] = useState(false)
+  const aboutCopyRef = useRef<HTMLParagraphElement>(null)
   const closeMenu = () => setMenuOpen(false)
 
   useEffect(() => {
@@ -140,12 +167,12 @@ export default function Page() {
     document.querySelector('footer')?.setAttribute('id', 'footer')
     setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
     const updateAboutProgress = () => {
-      const about = document.getElementById('about')
-      if (!about) return
-      const rect = about.getBoundingClientRect()
+      const aboutCopy = aboutCopyRef.current
+      if (!aboutCopy) return
+      const paragraphTop = aboutCopy.getBoundingClientRect().top
       const startY = window.innerHeight * 0.8
-      const endY = window.innerHeight * 0.3
-      const progress = Math.max(0, Math.min(1, (startY - rect.top) / (rect.height + startY - endY)))
+      const endY = window.innerHeight * 0.23
+      const progress = Math.max(0, Math.min(1, (startY - paragraphTop) / (startY - endY)))
       setAboutProgress(progress)
     }
     updateAboutProgress()
@@ -176,17 +203,17 @@ export default function Page() {
       </section>
 
       <section className="work section-wrap" id="works">
-        <div className="section-heading"><span className="section-kicker">(01) Selected work</span><h2>SELECTED<br /><em>WORK.</em></h2><p>A selection of web design and development projects.</p></div>
+        <div className="section-heading"><span className="section-kicker">(01) Selected work</span><RevealHeading lines={[<>SELECTED</>, <em>WORK.</em>]} /><p>A selection of web design and development projects.</p></div>
         <div className="projects">{projects.map((project) => <Project key={project.number} project={project} />)}</div>
       </section>
 
-      <section className="capabilities section-wrap" id="skills"><div className="section-heading"><span className="section-kicker">(02) Capabilities</span><h2>WHAT<br /><em>I DO.</em></h2></div><div className="capability-list">{capabilities.map((item, index) => <CapabilityRow key={item[0]} item={item} index={index} isOpen={openCapability === index} onToggle={() => setOpenCapability(openCapability === index ? null : index)} />)}</div></section>
+      <section className="capabilities section-wrap" id="skills"><div className="section-heading"><span className="section-kicker">(02) Capabilities</span><RevealHeading lines={[<>WHAT</>, <em>I DO.</em>]} /></div><div className="capability-list">{capabilities.map((item, index) => <CapabilityRow key={item[0]} item={item} index={index} isOpen={openCapability === index} onToggle={() => setOpenCapability(openCapability === index ? null : index)} />)}</div></section>
 
-      <section className="about section-wrap" id="about"><div className="section-heading"><span className="section-kicker">(03) About</span><h2>ABOUT<br /><em>ME.</em></h2></div><div className="about-content"><p className="about-copy">{aboutCopy.split(' ').map((word, index, words) => <AboutWord key={`${word}-${index}`} word={word} index={index} total={words.length} progress={reducedMotion ? 1 : aboutProgress} />)}</p></div></section>
+      <section className="about section-wrap" id="about"><div className="section-heading"><span className="section-kicker">(03) About</span><RevealHeading lines={[<>ABOUT</>, <em>ME.</em>]} /></div><div className="about-content"><p ref={aboutCopyRef} className="about-copy">{aboutCopy.split(' ').map((word, index, words) => <AboutWord key={`${word}-${index}`} word={word} index={index} total={words.length} progress={reducedMotion ? 1 : aboutProgress} />)}</p></div></section>
 
-      <section className="tools section-wrap"><div className="section-heading"><span className="section-kicker">(04) The toolkit</span><h2>TOOLS I<br /><em>WORK WITH</em></h2></div><div className="tools-list">{tools.map((tool, index) => <ToolItem key={tool[0]} item={tool} index={index} isOpen={openTool === index} onToggle={() => setOpenTool(openTool === index ? null : index)} />)}</div></section>
+      <section className="tools section-wrap"><div className="section-heading"><span className="section-kicker">(04) The toolkit</span><RevealHeading lines={[<>TOOLS I</>, <em>WORK WITH</em>]} /></div><div className="tools-list">{tools.map((tool, index) => <ToolItem key={tool[0]} item={tool} index={index} isOpen={openTool === index} onToggle={() => setOpenTool(openTool === index ? null : index)} />)}</div></section>
 
-      <section className="contact section-wrap" id="contact"><span className="section-kicker">(05) Start a conversation</span><h2>LET&apos;S CREATE<br /><em>SOMETHING</em><br />GOOD.</h2><div className="contact-bottom"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=edagatantan@gmail.com&amp;su=Project%20Inquiry" target="_blank" rel="noopener noreferrer" className="button dark">START A PROJECT <ArrowDownRight size={18} /></a><div className="socials"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=edagatantan@gmail.com&amp;su=Project%20Inquiry" target="_blank" rel="noopener noreferrer">Email</a><a href="https://www.facebook.com/eugenedagatantan24" target="_blank" rel="noopener noreferrer">Facebook</a><a href="https://www.linkedin.com/in/edagatantan" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="https://github.com/yujinliee" target="_blank" rel="noopener noreferrer">GitHub</a></div></div></section>
+      <section className="contact section-wrap" id="contact"><span className="section-kicker">(05) Start a conversation</span><RevealHeading lines={[<>LET&apos;S CREATE</>, <em>SOMETHING</em>, <>GOOD.</>]} /><div className="contact-bottom"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=edagatantan@gmail.com&amp;su=Project%20Inquiry" target="_blank" rel="noopener noreferrer" className="button dark">START A PROJECT <ArrowDownRight size={18} /></a><div className="socials"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=edagatantan@gmail.com&amp;su=Project%20Inquiry" target="_blank" rel="noopener noreferrer">Email</a><a href="https://www.facebook.com/eugenedagatantan24" target="_blank" rel="noopener noreferrer">Facebook</a><a href="https://www.linkedin.com/in/edagatantan" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="https://github.com/yujinliee" target="_blank" rel="noopener noreferrer">GitHub</a></div></div></section>
 
       <footer><div className="footer-main"><a href="#top" className="wordmark">EUGENE<span>.</span></a><p className="footer-role">WEB DESIGNER<br />&amp; WEB DEVELOPER</p><div className="footer-socials"><a href="mailto:edagatantan@gmail.com">EMAIL</a><a href="https://www.facebook.com/eugenedagatantan24" target="_blank" rel="noopener noreferrer">FACEBOOK</a><a href="https://www.linkedin.com/in/edagatantan" target="_blank" rel="noopener noreferrer">LINKEDIN</a><a href="https://github.com/yujinliee" target="_blank" rel="noopener noreferrer">GITHUB</a></div><a href="#top" className="back-top">BACK TO TOP ↑</a></div><div className="footer-bottom"><span>© 2026 EUGENE DAGATANTAN</span><span>PHILIPPINES</span></div></footer>
     </main>
